@@ -1,2 +1,2 @@
-# trek-app2
-advanced trekking management system 
+# placement portal
+placement portal application

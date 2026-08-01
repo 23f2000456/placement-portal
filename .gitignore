@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Flask
+instance/
+*.sqlite3
+*.db
+
+# Vue / Node
+node_modules/
+dist/
+npm-debug.log*
+
+# Redis / Celery
+celerybeat-schedule
+dump.rdb
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env
+.env

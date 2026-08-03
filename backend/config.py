@@ -22,5 +22,7 @@ class Config:
     SECURITY_PASSWORD_SALT = os.environ.get("SECURITY_PASSWORD_SALT", "dev-salt-change-in-production")
     WTF_CSRF_ENABLED = False
 
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-jwt-secret-change-in-production")
+
     ADMIN_EMAIL = "admin@ppa.com"
     ADMIN_PASSWORD = "Admin@123"

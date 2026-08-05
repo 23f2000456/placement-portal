@@ -24,4 +24,7 @@ def create_app(config_class="backend.config.Config"):
     from backend.routes.admin import admin_bp
     app.register_blueprint(admin_bp)
 
+    from backend.routes.company import company_bp
+    app.register_blueprint(company_bp)
+
     return app

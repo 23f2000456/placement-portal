@@ -26,3 +26,7 @@ class Config:
 
     ADMIN_EMAIL = "admin@ppa.com"
     ADMIN_PASSWORD = "Admin@123"
+
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+    ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB max

@@ -58,11 +58,16 @@ class Application(db.Model):
     job_position_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)    
     application_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     status = db.Column(db.String(20), default="applied")  # applied  shortlisted  selected  rejected
+    feedback = db.Column(db.Text)                          
+    interview_datetime = db.Column(db.DateTime)     
 
     __table_args__= (db.UniqueConstraint('student_id', 'job_position_id'),)
 
     student = db.relationship('Student', backref='applications')
     job_position = db.relationship('Job', backref='applications')
+    placement = db.relationship(
+        'Placement', back_populates='application', uselist=False, cascade='all, delete-orphan'
+    )
 
 class Placement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -74,4 +79,4 @@ class Placement(db.Model):
     joining_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
-    application = db.relationship('Application', backref=db.backref('placement', uselist=False))
+    application = db.relationship('Application', back_populates='placement')

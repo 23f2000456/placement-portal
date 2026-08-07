@@ -220,3 +220,50 @@ def view_company_applications(company_id):
             } for a in j.applications]
         } for j in jobs]
     })
+
+from backend.tasks.reminders import send_interview_reminders
+from backend.tasks.reports import send_monthly_report
+from backend.tasks.export import export_applications_csv
+
+
+@admin_bp.route('/trigger/reminders', methods=['POST'])
+@role_required('admin')
+def trigger_reminders():
+    task = send_interview_reminders.delay()
+    return jsonify({
+        "message": "Interview reminder job triggered.",
+        "task_id": task.id
+    }), 202
+
+
+@admin_bp.route('/trigger/monthly-report', methods=['POST'])
+@role_required('admin')
+def trigger_monthly_report():
+    task = send_monthly_report.delay()
+    return jsonify({
+        "message": "Monthly report generation triggered.",
+        "task_id": task.id
+    }), 202
+
+
+@admin_bp.route('/trigger/export/<int:student_id>', methods=['POST'])
+@role_required('admin')
+def trigger_student_export(student_id):
+    student = Student.query.get_or_404(student_id)
+    task = export_applications_csv.delay(student.id)
+    return jsonify({
+        "message": f"CSV export triggered for {student.full_name}.",
+        "task_id": task.id
+    }), 202
+
+
+@admin_bp.route('/task-status/<task_id>', methods=['GET'])
+@role_required('admin')
+def task_status(task_id):
+    from backend import celery
+    task = celery.AsyncResult(task_id)
+    return jsonify({
+        "task_id": task_id,
+        "status": task.status,
+        "result": task.result if task.ready() else None
+    })

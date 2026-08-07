@@ -185,3 +185,27 @@ def placement_history():
         "feedback": a.feedback,
         "interview_datetime": a.interview_datetime.isoformat() if a.interview_datetime else None
     } for a in apps])
+
+from backend.tasks.export import export_applications_csv
+
+@student_bp.route('/export', methods=['POST'])
+@role_required('student')
+def trigger_export():
+    student = get_current_student()
+    task = export_applications_csv.delay(student.id)
+    return jsonify({
+        "message": "Export started. You will receive an email when done.",
+        "task_id": task.id
+    }), 202
+
+from backend import celery as celery_app
+
+@student_bp.route('/task-status/<task_id>', methods=['GET'])
+@role_required('student')
+def student_task_status(task_id):
+    task = celery_app.AsyncResult(task_id)
+    return jsonify({
+        "task_id": task_id,
+        "status": task.status,
+        "result": task.result if task.ready() else None
+    })

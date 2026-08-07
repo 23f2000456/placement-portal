@@ -177,3 +177,46 @@ def deactivate_student(student_id):
     db.session.commit()
     status = "deactivated" if not user.is_active else "reactivated"
     return jsonify({"message": f"Student {student.full_name} {status}"})
+
+@admin_bp.route('/students/<int:student_id>', methods=['GET'])
+@role_required('admin')
+def view_student(student_id):
+    student = Student.query.get_or_404(student_id)
+    apps = Application.query.filter_by(student_id=student.id).all()
+    return jsonify({
+        "id": student.id,
+        "full_name": student.full_name,
+        "branch": student.branch,
+        "cgpa": student.cgpa,
+        "graduation_year": student.graduation_year,
+        "skills": student.skills,
+        "phone": student.phone,
+        "is_blacklisted": student.is_blacklisted,
+        "applications": [{
+            "application_id": a.id,
+            "company_name": a.job_position.company.company_name,
+            "job_title": a.job_position.job_title,
+            "status": a.status,
+            "application_date": a.application_date.isoformat() if a.application_date else None
+        } for a in apps]
+    })
+
+
+@admin_bp.route('/companies/<int:company_id>/applications', methods=['GET'])
+@role_required('admin')
+def view_company_applications(company_id):
+    company = Company.query.get_or_404(company_id)
+    jobs = Job.query.filter_by(company_id=company.id).all()
+    return jsonify({
+        "company_name": company.company_name,
+        "jobs": [{
+            "job_id": j.id,
+            "job_title": j.job_title,
+            "status": j.status,
+            "applications": [{
+                "application_id": a.id,
+                "student_name": a.student.full_name,
+                "status": a.status
+            } for a in j.applications]
+        } for j in jobs]
+    })

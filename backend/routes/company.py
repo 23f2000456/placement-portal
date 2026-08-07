@@ -101,8 +101,13 @@ def view_applications(job_id):
 def update_application(app_id):
     data = request.get_json()
     application = Application.query.get_or_404(app_id)
+
+    VALID_STATUSES = ['applied', 'shortlisted', 'interview', 'offer', 'selected', 'rejected', 'placed']
+
     if 'status' in data:
-        application.status = data['status']  # shortlisted / selected / rejected
+        if data['status'] not in VALID_STATUSES:
+            return jsonify({"error": f"Invalid status. Must be one of: {VALID_STATUSES}"}), 400
+        application.status = data['status']
     if 'feedback' in data:
         application.feedback = data['feedback']
     if 'interview_datetime' in data:

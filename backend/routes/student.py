@@ -169,3 +169,19 @@ def offer_letter(app_id):
             "message": f"Congratulations {student.full_name}! You have been selected for the position of {application.job_position.job_title} at {application.job_position.company.company_name}."
         }
     })
+
+@student_bp.route('/history', methods=['GET'])
+@role_required('student')
+def placement_history():
+    student = get_current_student()
+    apps = Application.query.filter_by(student_id=student.id).all()
+    return jsonify([{
+        "application_id": a.id,
+        "company_name": a.job_position.company.company_name,
+        "job_title": a.job_position.job_title,
+        "salary": a.job_position.salary,
+        "application_date": a.application_date.isoformat() if a.application_date else None,
+        "status": a.status,
+        "feedback": a.feedback,
+        "interview_datetime": a.interview_datetime.isoformat() if a.interview_datetime else None
+    } for a in apps])

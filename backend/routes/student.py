@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from flask_jwt_extended import get_jwt_identity
-from backend import db
-from backend.models import Student, Job, Application, Placement, User
+from backend import db, cache, celery as celery_app
+from backend.models import Student, Job, Application, User
 from backend.utils import role_required
+from backend.tasks.export import export_applications_csv
 from werkzeug.utils import secure_filename
 import os
 
@@ -17,6 +18,12 @@ def get_current_student():
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+
+def clear_student_cache(student_id):
+    cache.delete(f'student_jobs')
+    cache.delete(f'student_applications_{student_id}')
+    cache.delete(f'student_history_{student_id}')
 
 
 @student_bp.route('/profile', methods=['GET'])
@@ -47,6 +54,7 @@ def update_profile():
     student.skills = data.get('skills', student.skills)
     student.phone = data.get('phone', student.phone)
     db.session.commit()
+    clear_student_cache(student.id)
     return jsonify({"message": "Profile updated successfully"})
 
 
@@ -79,6 +87,7 @@ def download_resume():
 
 @student_bp.route('/jobs', methods=['GET'])
 @role_required('student')
+@cache.cached(timeout=60, query_string=True)
 def list_jobs():
     search = request.args.get('search', '')
     query = Job.query.filter_by(status='approved')
@@ -112,16 +121,14 @@ def apply_job(job_id):
 
     job = Job.query.filter_by(id=job_id, status='approved').first_or_404()
 
-    # eligibility checks
     if student.cgpa and job.min_cgpa and student.cgpa < job.min_cgpa:
         return jsonify({"error": f"Minimum CGPA required: {job.min_cgpa}"}), 403
 
     if job.eligible_branches and student.branch:
         allowed = [b.strip() for b in job.eligible_branches.split(',')]
         if student.branch not in allowed:
-            return jsonify({"error": f"Your branch is not eligible for this job"}), 403
+            return jsonify({"error": "Your branch is not eligible for this job"}), 403
 
-    # duplicate application check (belt-and-suspenders, DB constraint also prevents this)
     existing = Application.query.filter_by(
         student_id=student.id,
         job_position_id=job_id
@@ -132,11 +139,13 @@ def apply_job(job_id):
     application = Application(student_id=student.id, job_position_id=job_id)
     db.session.add(application)
     db.session.commit()
+    clear_student_cache(student.id)
     return jsonify({"message": "Application submitted successfully", "application_id": application.id}), 201
 
 
 @student_bp.route('/applications', methods=['GET'])
 @role_required('student')
+@cache.cached(timeout=30, query_string=True)
 def my_applications():
     student = get_current_student()
     apps = Application.query.filter_by(student_id=student.id).all()
@@ -148,6 +157,24 @@ def my_applications():
         "feedback": a.feedback,
         "interview_datetime": a.interview_datetime.isoformat() if a.interview_datetime else None,
         "application_date": a.application_date.isoformat() if a.application_date else None
+    } for a in apps])
+
+
+@student_bp.route('/history', methods=['GET'])
+@role_required('student')
+@cache.cached(timeout=60, query_string=True)
+def placement_history():
+    student = get_current_student()
+    apps = Application.query.filter_by(student_id=student.id).all()
+    return jsonify([{
+        "application_id": a.id,
+        "company_name": a.job_position.company.company_name,
+        "job_title": a.job_position.job_title,
+        "salary": a.job_position.salary,
+        "application_date": a.application_date.isoformat() if a.application_date else None,
+        "status": a.status,
+        "feedback": a.feedback,
+        "interview_datetime": a.interview_datetime.isoformat() if a.interview_datetime else None
     } for a in apps])
 
 
@@ -170,23 +197,6 @@ def offer_letter(app_id):
         }
     })
 
-@student_bp.route('/history', methods=['GET'])
-@role_required('student')
-def placement_history():
-    student = get_current_student()
-    apps = Application.query.filter_by(student_id=student.id).all()
-    return jsonify([{
-        "application_id": a.id,
-        "company_name": a.job_position.company.company_name,
-        "job_title": a.job_position.job_title,
-        "salary": a.job_position.salary,
-        "application_date": a.application_date.isoformat() if a.application_date else None,
-        "status": a.status,
-        "feedback": a.feedback,
-        "interview_datetime": a.interview_datetime.isoformat() if a.interview_datetime else None
-    } for a in apps])
-
-from backend.tasks.export import export_applications_csv
 
 @student_bp.route('/export', methods=['POST'])
 @role_required('student')
@@ -198,7 +208,6 @@ def trigger_export():
         "task_id": task.id
     }), 202
 
-from backend import celery as celery_app
 
 @student_bp.route('/task-status/<task_id>', methods=['GET'])
 @role_required('student')

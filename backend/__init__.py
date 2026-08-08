@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_caching import Cache
+from flask_cors import CORS
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -17,6 +18,7 @@ cache = Cache()
 def create_app(config_class="backend.config.Config"):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_class)
+    CORS(app, origins=["http://localhost:8080", "http://localhost:8081"])
 
     os.makedirs(app.instance_path, exist_ok=True)
 

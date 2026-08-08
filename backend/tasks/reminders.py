@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
-from backend import celery, mail, db
-from backend.models import Application
+from backend import celery, mail
+from backend.models import Job, Application, Student, User
 from flask_mail import Message
 
 
@@ -10,30 +10,42 @@ def send_interview_reminders():
     start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
     end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    upcoming = Application.query.filter(
-        Application.interview_datetime >= start,
-        Application.interview_datetime <= end,
-        Application.status == 'interview'
+    # Find jobs with deadline tomorrow
+    upcoming_jobs = Job.query.filter(
+        Job.application_deadline >= start,
+        Job.application_deadline <= end,
+        Job.status == 'approved'
     ).all()
 
-    for app in upcoming:
-        student_email = app.student.user.email
-        msg = Message(
-            subject="Interview Reminder - Placement Portal",
-            recipients=[student_email],
-            body=f"""
-Hi {app.student.full_name},
+    sent = 0
 
-This is a reminder that you have an interview scheduled tomorrow.
+    # Find all students who haven't applied yet and notify them
+    for job in upcoming_jobs:
+        applied_student_ids = [a.student_id for a in job.applications]
+        all_students = Student.query.filter_by(is_blacklisted=False).all()
 
-Company: {app.job_position.company.company_name}
-Position: {app.job_position.job_title}
-Time: {app.interview_datetime.strftime('%Y-%m-%d %H:%M')}
+        for student in all_students:
+            if student.id not in applied_student_ids:
+                user = User.query.get(student.user_id)
+                msg = Message(
+                    subject="Application Deadline Reminder - Placement Portal",
+                    recipients=[user.email],
+                    body=f"""
+Hi {student.full_name},
 
-Best of luck!
+This is a reminder that the application deadline for the following placement drive is tomorrow!
+
+Company: {job.company.company_name}
+Position: {job.job_title}
+Deadline: {job.application_deadline.strftime('%Y-%m-%d')}
+
+Don't miss out — apply now on the Placement Portal.
+
+Best regards,
 Placement Portal Team
-            """
-        )
-        mail.send(msg)
+                    """
+                )
+                mail.send(msg)
+                sent += 1
 
-    return f"Sent {len(upcoming)} interview reminders"
+    return f"Sent {sent} deadline reminders"

@@ -55,9 +55,7 @@
       <!-- My Applications Tab -->
       <div v-if="tab === 'applications'">
         <div class="mb-3">
-          <button class="btn btn-success btn-sm" @click="triggerExport">
-            Export CSV
-          </button>
+          <button class="btn btn-success btn-sm" @click="triggerExport">Export CSV</button>
           <span v-if="exportMsg" class="ms-3 text-success small">{{ exportMsg }}</span>
         </div>
         <table class="table table-bordered table-hover">
@@ -101,7 +99,7 @@
 
       <!-- Profile Tab -->
       <div v-if="tab === 'profile'">
-        <div class="card p-4">
+        <div class="card p-4 mb-4">
           <h5 class="mb-3">My Profile</h5>
           <div v-if="profileMsg" class="alert alert-success">{{ profileMsg }}</div>
           <div class="row">
@@ -134,6 +132,23 @@
           </div>
           <button class="btn btn-primary" @click="updateProfile">Save Profile</button>
         </div>
+
+        <!-- Resume Upload Section -->
+        <div class="card p-4">
+          <h5 class="mb-3">Resume</h5>
+          <div v-if="resumeMsg" class="alert alert-success">{{ resumeMsg }}</div>
+          <div v-if="resumeError" class="alert alert-danger">{{ resumeError }}</div>
+          <div v-if="profile.resume_path" class="mb-3">
+            <p class="text-muted small">Current resume: <strong>{{ profile.resume_path }}</strong></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Upload Resume (PDF, DOC, DOCX — max 5MB)</label>
+            <input type="file" class="form-control" accept=".pdf,.doc,.docx" @change="onFileChange" />
+          </div>
+          <button class="btn btn-success" @click="uploadResume" :disabled="!resumeFile">
+            Upload Resume
+          </button>
+        </div>
       </div>
 
     </div>
@@ -150,8 +165,10 @@ export default {
       jobs: [], applications: [], history: [],
       jobSearch: '',
       profile: {},
+      resumeFile: null,
       applyMsg: null, applyError: null,
-      profileMsg: null, exportMsg: null
+      profileMsg: null, exportMsg: null,
+      resumeMsg: null, resumeError: null
     }
   },
   mounted () {
@@ -194,6 +211,24 @@ export default {
         this.profileMsg = 'Profile updated successfully!'
       } catch (err) {
         alert('Failed to update profile.')
+      }
+    },
+    onFileChange (e) {
+      this.resumeFile = e.target.files[0]
+    },
+    async uploadResume () {
+      this.resumeMsg = null
+      this.resumeError = null
+      try {
+        const formData = new FormData()
+        formData.append('resume', this.resumeFile)
+        await api.post('/student/profile/resume', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        this.resumeMsg = 'Resume uploaded successfully!'
+        this.fetchProfile()
+      } catch (err) {
+        this.resumeError = err.response?.data?.error || 'Upload failed.'
       }
     },
     async triggerExport () {

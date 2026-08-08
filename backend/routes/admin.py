@@ -83,9 +83,17 @@ def blacklist_company(company_id):
 def remove_company(company_id):
     company = Company.query.get_or_404(company_id)
     user = User.query.get(company.user_id)
+
+    # Delete in correct order to avoid constraint errors
+    jobs = Job.query.filter_by(company_id=company.id).all()
+    for job in jobs:
+        Application.query.filter_by(job_position_id=job.id).delete()
+        db.session.delete(job)
+
     db.session.delete(company)
     if user:
         db.session.delete(user)
+
     db.session.commit()
     clear_cache()
     return jsonify({"message": "Company removed"})
@@ -150,6 +158,7 @@ def reject_job(job_id):
 @role_required('admin')
 def remove_job(job_id):
     job = Job.query.get_or_404(job_id)
+    Application.query.filter_by(job_position_id=job.id).delete()
     db.session.delete(job)
     db.session.commit()
     clear_cache()
@@ -282,4 +291,34 @@ def task_status(task_id):
         "task_id": task_id,
         "status": task.status,
         "result": task.result if task.ready() else None
+    })
+
+@admin_bp.route('/stats', methods=['GET'])
+@role_required('admin')
+def placement_stats():
+    total_students = Student.query.count()
+    total_companies = Company.query.count()
+    total_jobs = Job.query.count()
+    total_applications = Application.query.count()
+    total_selected = Application.query.filter(
+        Application.status.in_(['selected', 'placed'])
+    ).count()
+    total_shortlisted = Application.query.filter_by(status='shortlisted').count()
+    approved_companies = Company.query.filter_by(approval_status='approved').count()
+    pending_companies = Company.query.filter_by(approval_status='pending').count()
+    approved_jobs = Job.query.filter_by(status='approved').count()
+    pending_jobs = Job.query.filter_by(status='pending').count()
+
+    return jsonify({
+        "total_students": total_students,
+        "total_companies": total_companies,
+        "total_jobs": total_jobs,
+        "total_applications": total_applications,
+        "total_selected": total_selected,
+        "total_shortlisted": total_shortlisted,
+        "approved_companies": approved_companies,
+        "pending_companies": pending_companies,
+        "approved_jobs": approved_jobs,
+        "pending_jobs": pending_jobs,
+        "placement_rate": round((total_selected / total_applications * 100), 1) if total_applications > 0 else 0
     })

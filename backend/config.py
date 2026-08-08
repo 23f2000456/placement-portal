@@ -24,7 +24,7 @@ class Config:
 
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-jwt-secret-change-in-production")
 
-    ADMIN_EMAIL = "admin@ppa.com"
+    ADMIN_EMAIL = "sourajitban+admin@gmail.com"
     ADMIN_PASSWORD = "Admin@123"
 
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")

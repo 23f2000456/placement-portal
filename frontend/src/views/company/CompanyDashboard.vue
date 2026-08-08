@@ -1,12 +1,36 @@
 <template>
   <div>
-    <!-- Navbar -->
     <nav class="navbar navbar-dark bg-success px-4">
       <span class="navbar-brand">Placement Portal — Company</span>
       <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
     </nav>
 
     <div class="container mt-4">
+
+      <!-- Company Details Card -->
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ stats.company_name }}</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <p class="mb-1"><strong>Industry:</strong> {{ companyDetails.industry || '—' }}</p>
+              <p class="mb-1"><strong>Location:</strong> {{ companyDetails.location || '—' }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1"><strong>HR Contact:</strong> {{ companyDetails.hr_contact || '—' }}</p>
+              <p class="mb-1"><strong>Website:</strong>
+                <a :href="companyDetails.website" target="_blank">{{ companyDetails.website || '—' }}</a>
+              </p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1"><strong>Status:</strong>
+                <span class="badge bg-success">Approved</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Stats Cards -->
       <div class="row mb-4">
         <div class="col-md-4">
@@ -53,7 +77,7 @@
           <tbody>
             <tr v-for="j in jobs" :key="j.id">
               <td>{{ j.job_title }}</td>
-              <td>{{ j.application_deadline }}</td>
+              <td>{{ formatDate(j.application_deadline) }}</td>
               <td><span :class="statusBadge(j.status)">{{ j.status }}</span></td>
               <td>{{ j.total_applications }}</td>
               <td>
@@ -130,7 +154,7 @@
                 <td>{{ a.branch }}</td>
                 <td>{{ a.cgpa }}</td>
                 <td><span :class="statusBadge(a.status)">{{ a.status }}</span></td>
-                <td>{{ a.interview_datetime || '—' }}</td>
+                <td>{{ formatDate(a.interview_datetime) }}</td>
                 <td>
                   <select v-model="a.newStatus" class="form-select form-select-sm mb-1">
                     <option value="shortlisted">Shortlisted</option>
@@ -161,6 +185,7 @@ export default {
     return {
       tab: 'jobs',
       stats: {},
+      companyDetails: {},
       jobs: [],
       applications: [],
       selectedJobId: null,
@@ -178,9 +203,18 @@ export default {
     this.fetchJobs()
   },
   methods: {
+    formatDate (dateStr) {
+      if (!dateStr) return '—'
+      return new Date(dateStr).toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        timeZone: 'Asia/Kolkata'
+      })
+    },
     async fetchStats () {
       const res = await api.get('/company/dashboard')
       this.stats = res.data
+      this.companyDetails = res.data
     },
     async fetchJobs () {
       const res = await api.get('/company/jobs')
@@ -189,7 +223,9 @@ export default {
     async viewApplications (jobId) {
       this.selectedJobId = jobId
       const res = await api.get(`/company/jobs/${jobId}/applications`)
-      this.applications = res.data.map(a => ({ ...a, newStatus: a.status, newInterview: '', newFeedback: a.feedback || '' }))
+      this.applications = res.data.map(a => ({
+        ...a, newStatus: a.status, newInterview: '', newFeedback: a.feedback || ''
+      }))
       this.tab = 'applications'
     },
     async closeJob (jobId) {

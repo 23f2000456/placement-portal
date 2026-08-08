@@ -145,7 +145,6 @@ def apply_job(job_id):
 
 @student_bp.route('/applications', methods=['GET'])
 @role_required('student')
-@cache.cached(timeout=30, query_string=True)
 def my_applications():
     student = get_current_student()
     apps = Application.query.filter_by(student_id=student.id).all()
@@ -218,3 +217,24 @@ def student_task_status(task_id):
         "status": task.status,
         "result": task.result if task.ready() else None
     })
+
+@student_bp.route('/companies', methods=['GET'])
+@role_required('student')
+@cache.cached(timeout=60, query_string=True)
+def list_companies():
+    search = request.args.get('search', '')
+    from backend.models import Company
+    query = Company.query.filter_by(approval_status='approved')
+    if search:
+        query = query.filter(
+            (Company.company_name.ilike(f'%{search}%')) |
+            (Company.industry.ilike(f'%{search}%'))
+        )
+    companies = query.all()
+    return jsonify([{
+        "id": c.id,
+        "company_name": c.company_name,
+        "industry": c.industry,
+        "location": c.location,
+        "website": c.website
+    } for c in companies])

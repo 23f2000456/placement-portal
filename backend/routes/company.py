@@ -25,11 +25,14 @@ def dashboard():
     ).count()
     return jsonify({
         "company_name": company.company_name,
+        "industry": company.industry,
+        "location": company.location,
+        "hr_contact": company.hr_contact,
+        "website": company.website,
         "total_job_postings": len(jobs),
         "total_applications": total_applications,
         "shortlisted_candidates": shortlisted
     })
-
 
 @company_bp.route('/jobs', methods=['GET'])
 @role_required('company')

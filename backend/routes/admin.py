@@ -95,7 +95,6 @@ def remove_company(company_id):
     company = Company.query.get_or_404(company_id)
     user = User.query.get(company.user_id)
 
-    # Delete in correct order to avoid constraint errors
     jobs = Job.query.filter_by(company_id=company.id).all()
     for job in jobs:
         Application.query.filter_by(job_position_id=job.id).delete()

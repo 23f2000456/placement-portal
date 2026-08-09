@@ -49,7 +49,7 @@ def create_app(config_class="backend.config.Config"):
 
     celery.Task = ContextTask
 
-    from backend import models  # noqa
+    from backend import models  
 
     from backend.routes.auth import auth_bp
     app.register_blueprint(auth_bp)

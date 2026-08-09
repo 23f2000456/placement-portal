@@ -8,7 +8,6 @@ from flask_mail import Message
 def send_monthly_report():
     now = datetime.now(timezone.utc)
 
-    # Get last month's range
     first_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     if first_day.month == 1:
         last_month_start = first_day.replace(year=first_day.year - 1, month=12)
@@ -16,12 +15,10 @@ def send_monthly_report():
         last_month_start = first_day.replace(month=first_day.month - 1)
     last_month_end = first_day
 
-    # Get ALL time stats for manual trigger context
     all_apps = Application.query.all()
     all_drives = Job.query.count()
     all_selected = sum(1 for a in all_apps if a.status in ['selected', 'placed'])
 
-    # Last month stats
     monthly_apps = Application.query.filter(
         Application.application_date >= last_month_start,
         Application.application_date < last_month_end

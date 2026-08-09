@@ -26,7 +26,7 @@ def export_applications_csv(self, student_id):
                 a.application_date.strftime('%Y-%m-%d') if a.application_date else ''
             ])
 
-    # Email the CSV to the student
+
     student_email = student.user.email
     msg = Message(
         subject="Your Application History Export",

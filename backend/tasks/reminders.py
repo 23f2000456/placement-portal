@@ -11,14 +11,13 @@ def send_interview_reminders():
     start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
     end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Jobs with deadline tomorrow (scheduled daily run)
+
     upcoming_jobs = Job.query.filter(
         Job.application_deadline >= start,
         Job.application_deadline <= end,
         Job.status == 'approved'
     ).all()
 
-    # For manual trigger — use all future jobs if none due tomorrow
     if not upcoming_jobs:
         upcoming_jobs = Job.query.filter(
             Job.application_deadline >= now,
@@ -28,16 +27,13 @@ def send_interview_reminders():
     all_students = Student.query.filter_by(is_blacklisted=False).all()
     sent = 0
 
-    # Send deadline reminders to all eligible students
     for job in upcoming_jobs:
         applied_student_ids = [a.student_id for a in job.applications]
 
         for student in all_students:
             user = User.query.get(student.user_id)
 
-            # Send to ALL students — both applied and not applied
-            # Applied students get a "your application is active" reminder
-            # Non-applied students get a "don't miss out" reminder
+
             if student.id in applied_student_ids:
                 subject = f"Reminder: Your application deadline is approaching — {job.job_title}"
                 body = f"""

@@ -34,8 +34,7 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard — redirect to login if not authenticated
-// Redirect to correct dashboard if wrong role tries to access a route
+
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   const role = localStorage.getItem('role')

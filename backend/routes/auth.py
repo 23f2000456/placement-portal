@@ -20,7 +20,7 @@ def register_student():
         role='student'
     )
     db.session.add(user)
-    db.session.flush()  # get user.id before commit
+    db.session.flush()  
 
     student = Student(
         user_id=user.id,
@@ -58,7 +58,6 @@ def register_company():
         website=data.get('website'),
         industry=data.get('industry'),
         location=data.get('location')
-        # approval_status defaults to "pending" — admin must approve later
     )
     db.session.add(company)
     db.session.commit()
@@ -77,7 +76,6 @@ def login():
     if not user.is_active:
         return jsonify({"error": "Account is deactivated"}), 403
 
-    # Block company login until admin approves
     if user.role == 'company':
         company = Company.query.filter_by(user_id=user.id).first()
         if company.approval_status != 'approved':

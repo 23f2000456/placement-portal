@@ -16,7 +16,7 @@ def create_app(config_class="backend.config.Config"):
     db.init_app(app)
     jwt.init_app(app)
 
-    from backend import models  # registers models with SQLAlchemy
+    from backend import models  
 
     from backend.routes.auth import auth_bp
     app.register_blueprint(auth_bp)

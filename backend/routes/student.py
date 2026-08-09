@@ -87,16 +87,32 @@ def download_resume():
 
 @student_bp.route('/jobs', methods=['GET'])
 @role_required('student')
-@cache.cached(timeout=60, query_string=True)
 def list_jobs():
     search = request.args.get('search', '')
+    eligible_only = request.args.get('eligible_only', 'false').lower() == 'true'
     query = Job.query.filter_by(status='approved')
+
     if search:
         query = query.filter(
             (Job.job_title.ilike(f'%{search}%')) |
             (Job.skills_required.ilike(f'%{search}%'))
         )
+
     jobs = query.all()
+
+    if eligible_only:
+        student = get_current_student()
+        filtered = []
+        for j in jobs:
+            if j.min_cgpa and student.cgpa and student.cgpa < j.min_cgpa:
+                continue
+            if j.eligible_branches and student.branch:
+                allowed = [b.strip() for b in j.eligible_branches.split(',')]
+                if student.branch not in allowed:
+                    continue
+            filtered.append(j)
+        jobs = filtered
+
     return jsonify([{
         "id": j.id,
         "company_name": j.company.company_name,

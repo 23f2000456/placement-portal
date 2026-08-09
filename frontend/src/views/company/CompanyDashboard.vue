@@ -33,22 +33,28 @@
 
       <!-- Stats Cards -->
       <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="card text-white bg-primary text-center p-3">
             <h4>{{ stats.total_job_postings }}</h4>
             <p class="mb-0">Job Postings</p>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="card text-white bg-warning text-center p-3">
             <h4>{{ stats.total_applications }}</h4>
             <p class="mb-0">Total Applications</p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="card text-white bg-success text-center p-3">
+        <div class="col-md-3">
+          <div class="card text-white bg-info text-center p-3">
             <h4>{{ stats.shortlisted_candidates }}</h4>
             <p class="mb-0">Shortlisted</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-success text-center p-3">
+            <h4>{{ stats.selected_candidates }}</h4>
+            <p class="mb-0">Selected</p>
           </div>
         </div>
       </div>
@@ -159,7 +165,6 @@
                   <select v-model="a.newStatus" class="form-select form-select-sm mb-1">
                     <option value="shortlisted">Shortlisted</option>
                     <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
                     <option value="selected">Selected</option>
                     <option value="rejected">Rejected</option>
                   </select>
@@ -269,7 +274,6 @@ export default {
         rejected: 'badge bg-danger', closed: 'badge bg-secondary',
         applied: 'badge bg-primary', shortlisted: 'badge bg-info',
         selected: 'badge bg-success', interview: 'badge bg-warning text-dark',
-        offer: 'badge bg-info'
       }
       return map[status] || 'badge bg-secondary'
     },

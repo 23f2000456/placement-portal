@@ -77,6 +77,17 @@ def blacklist_company(company_id):
     status = "blacklisted" if company.is_blacklisted else "un-blacklisted"
     return jsonify({"message": f"Company {company.company_name} {status}"})
 
+@admin_bp.route('/companies/<int:company_id>/deactivate', methods=['PATCH'])
+@role_required('admin')
+def deactivate_company(company_id):
+    company = Company.query.get_or_404(company_id)
+    user = User.query.get(company.user_id)
+    user.is_active = not user.is_active
+    db.session.commit()
+    clear_cache()
+    status = "deactivated" if not user.is_active else "reactivated"
+    return jsonify({"message": f"Company {company.company_name} {status}"})
+
 
 @admin_bp.route('/companies/<int:company_id>', methods=['DELETE'])
 @role_required('admin')

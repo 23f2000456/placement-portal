@@ -26,9 +26,22 @@
 
       <!-- Browse Jobs Tab -->
       <div v-if="tab === 'jobs'">
-        <div class="input-group mb-3">
-          <input v-model="jobSearch" type="text" class="form-control" placeholder="Search by title or skills" />
-          <button class="btn btn-outline-secondary" @click="fetchJobs">Search</button>
+        <div class="row mb-3">
+          <div class="col-md-8">
+            <div class="input-group">
+              <input v-model="jobSearch" type="text" class="form-control" placeholder="Search by title or skills" />
+              <button class="btn btn-outline-secondary" @click="fetchJobs">Search</button>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <button
+              class="btn w-100"
+              :class="eligibleOnly ? 'btn-success' : 'btn-outline-success'"
+              @click="toggleEligibleFilter"
+            >
+              {{ eligibleOnly ? '✓ Showing Eligible Jobs' : 'Show Only Eligible Jobs' }}
+            </button>
+          </div>
         </div>
         <div v-if="applyMsg" class="alert alert-success">{{ applyMsg }}</div>
         <div v-if="applyError" class="alert alert-danger">{{ applyError }}</div>
@@ -186,7 +199,7 @@ export default {
     return {
       tab: 'jobs',
       jobs: [], applications: [], history: [], companies: [],
-      jobSearch: '', companySearch: '',
+      jobSearch: '', companySearch: '', eligibleOnly: false,
       profile: {},
       resumeFile: null,
       applyMsg: null, applyError: null,
@@ -209,8 +222,14 @@ export default {
         timeZone: 'Asia/Kolkata'
       })
     },
+    toggleEligibleFilter () {
+      this.eligibleOnly = !this.eligibleOnly
+      this.fetchJobs()
+    },
     async fetchJobs () {
-      const res = await api.get('/student/jobs', { params: { search: this.jobSearch } })
+      const params = { search: this.jobSearch }
+      if (this.eligibleOnly) params.eligible_only = true
+      const res = await api.get('/student/jobs', { params })
       this.jobs = res.data
     },
     async fetchCompanies () {

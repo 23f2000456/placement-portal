@@ -31,7 +31,11 @@ def dashboard():
         "website": company.website,
         "total_job_postings": len(jobs),
         "total_applications": total_applications,
-        "shortlisted_candidates": shortlisted
+        "shortlisted_candidates": shortlisted,
+        "selected_candidates": Application.query.join(Job).filter(
+            Job.company_id == company.id,
+            Application.status.in_(['selected', 'placed'])
+        ).count()
     })
 
 @company_bp.route('/jobs', methods=['GET'])

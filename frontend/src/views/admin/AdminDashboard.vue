@@ -79,6 +79,7 @@
                 <button class="btn btn-success btn-sm me-1" @click="approveCompany(c.id)">Approve</button>
                 <button class="btn btn-danger btn-sm me-1" @click="rejectCompany(c.id)">Reject</button>
                 <button class="btn btn-warning btn-sm me-1" @click="blacklistCompany(c.id)">Blacklist</button>
+                <button class="btn btn-secondary btn-sm me-1" @click="deactivateCompany(c.id)">Deactivate</button>
                 <button class="btn btn-dark btn-sm" @click="removeCompany(c.id)">Remove</button>
               </td>
             </tr>
@@ -305,6 +306,10 @@ export default {
     },
     async blacklistCompany (id) {
       await api.patch(`/admin/companies/${id}/blacklist`)
+      this.fetchCompanies()
+    },
+    async deactivateCompany (id) {
+      await api.patch(`/admin/companies/${id}/deactivate`)
       this.fetchCompanies()
     },
     async removeCompany (id) {
